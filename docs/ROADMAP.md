@@ -36,6 +36,8 @@
 
 ## Phase 3: a tiny API (when traffic or the apps need it)
 
+**Built (v0.3): the lookup cache in `server/`.** It runs on AWS (Lambda + DynamoDB, deploy with SAM; see [server/README.md](../server/README.md)) instead of a Cloudflare Worker, so this phase doubles as AWS practice. Still to do here: the compact `/v1/hood` answer for watches. The notes below are the original plan.
+
 Why: Nominatim's 1 request/second limit applies to the whole app, not per user. A shared cache helps everyone, gives one place to merge better data, and lets watches get a tiny JSON answer.
 
 - `GET /v1/hood?lat=30.306&lon=-97.729` returns `{"neighborhood":"Hyde Park","broader":[],"settlement":"Austin","region":"Texas","country":"United States","outline":true}`

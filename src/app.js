@@ -4,6 +4,7 @@
 // in the browser: OpenFreeMap tiles, OpenStreetMap (Nominatim / Photon), Esri,
 // and static files shipped with the site (Zillow boundaries, IHO sea areas).
 import { answerFor, explain, levelsOf, wantsWater } from './answer.js';
+import { apiBase } from './config.js';
 import { bboxOf, parseLatLon } from './hood.js';
 import { createNominatim } from './nominatim.js';
 import {
@@ -40,13 +41,16 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 // -------------------------------------------------------------- sources
 
-const nominatim = createNominatim();
+// With our lookup cache deployed, OSM lookups go through it (it enforces the
+// 1 request/second limit for everyone, so the browser needn't wait as long).
+const API = apiBase();
+const nominatim = createNominatim(API ? { baseUrl: `${API}/nominatim`, minIntervalMs: 250 } : {});
 const zillow = createZillowSource();
 const osm = createOsmSource(nominatim);
 const SOURCES = {
   auto: createAutoSource({ osm, zillow }),
   osm,
-  photon: createPhotonSource(),
+  photon: createPhotonSource(API ? { baseUrl: `${API}/photon` } : {}),
   zillow,
   esri: createEsriSource(),
 };

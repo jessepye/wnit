@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.mjs",
+    "api": "node server/local.mjs",
     "test": "node --test tests/*.test.mjs",
     "e2e": "node tests/e2e.mjs",
     "e2e:live": "node tests/e2e.mjs --live"

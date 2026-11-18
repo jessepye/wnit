@@ -12,6 +12,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
 import { startServer } from '../scripts/serve.mjs';
+import { startApiServer } from '../server/local.mjs';
 import { mockBody } from './helpers.mjs';
 
 const require = createRequire(import.meta.url);
@@ -37,6 +38,13 @@ const MOCKED = ['https://nominatim.openstreetmap.org/**', 'https://photon.komoot
 
 const server = await startServer(0);
 const BASE = `http://127.0.0.1:${server.address().port}/`;
+// The lookup cache (server/), run locally; offline it answers from the same recorded fixtures.
+const apiServer = await startApiServer({
+  port: 0,
+  intervals: { nominatim: 50, photon: 20 },
+  ...(LIVE ? {} : { fetchImpl: async (url) => ({ ok: true, status: 200, text: async () => mockBody(url) }) }),
+});
+const API = `http://127.0.0.1:${apiServer.address().port}`;
 const browser = await chromium.launch();
 const failures = [];
 let passed = 0;
@@ -220,6 +228,24 @@ if (!LIVE) {
     await hood(page, /^Hyde Park$/);
     assert.equal(await text(page, '#via'), 'Source: OpenStreetMap · Photon');
   });
+
+  await scenario('with the lookup cache: no direct OSM calls, and a reload is served from cache', {}, async (page, direct) => {
+    const viaApi = [];
+    page.on('response', (res) => {
+      if (res.url().startsWith(API)) viaApi.push(res.headers()['x-wnit-cache']);
+    });
+    await page.goto(`${BASE}?api=${encodeURIComponent(API)}#35.40000,-102.30000`);
+    await hood(page, /^Oldham County$/);
+    await waitBoundary(page, 'Oldham County');
+    assert.ok(viaApi.length >= 2, `lookups went through the cache API (${viaApi.length})`);
+    assert.ok(viaApi.every((h) => h === 'miss'), 'first visit: all misses');
+    assert.equal(direct.length, 0, 'no direct calls to nominatim.openstreetmap.org');
+    viaApi.length = 0;
+    await page.reload();
+    await hood(page, /^Oldham County$/);
+    await waitBoundary(page, 'Oldham County');
+    assert.ok(viaApi.length >= 2 && viaApi.every((h) => h === 'hit'), `reload served from cache: ${viaApi.join(',')}`);
+  });
 } else {
   await scenario('LIVE: Austin via GPS + compare sources', { ...GPS, deviceScaleFactor: 2 }, async (page) => {
     await page.goto(BASE);
@@ -263,5 +289,6 @@ if (!LIVE) {
 
 await browser.close();
 server.close();
+apiServer.close();
 console.log(`\n${passed} passed, ${failures.length} failed`);
 process.exit(failures.length ? 1 : 0);

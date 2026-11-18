@@ -37,13 +37,17 @@ No build step and no dependencies to run.
 npm start          # serves http://localhost:8000 (location works on localhost)
 ```
 
-Any static file server works. To publish, turn on GitHub Pages for the repo root (see [ROADMAP.md → Phase 1](docs/ROADMAP.md#phase-1-put-it-online-an-evening-about-1015)).
+Any static file server works. Where to put it for real: **[docs/HOSTING.md](docs/HOSTING.md)**.
+
+## Lookup cache (optional, AWS)
+
+`server/` is a small AWS app (Lambda + DynamoDB, deployed with one `sam deploy`). Every visitor's OpenStreetMap lookups go through one shared cache and one polite 1-request-per-second limit, as Nominatim's policy asks. Repeat lookups come back in milliseconds. To use it, deploy it ([server/README.md](server/README.md)) and paste its URL into `<meta name="wnit-api">` in `index.html`. Left empty, the site talks to the free services directly. To try it locally: `npm run api` and open `http://localhost:8000/?api=http://localhost:8787`.
 
 ## Test it
 
 ```sh
-npm test           # 37 unit tests (Node 18+, no installs): naming rules, every source, the fallback ladder
-npm run e2e        # 11 browser scenarios with recorded answers (needs Playwright, see below)
+npm test           # 48 unit tests (Node 18+, no installs): naming rules, every source, the fallback ladder, the cache
+npm run e2e        # 12 browser scenarios with recorded answers (needs Playwright, see below)
 npm run e2e:live   # a few scenarios against the real services, gently
 ```
 

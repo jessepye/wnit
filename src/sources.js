@@ -111,7 +111,7 @@ export function createPhotonSource({ baseUrl = 'https://photon.komoot.io', fetch
     id: 'photon',
     async lookup(lat, lon, { signal } = {}) {
       const lang = languages().split(',')[0].slice(0, 2).toLowerCase();
-      const url = new URL('/reverse', baseUrl);
+      const url = new URL('reverse', baseUrl.replace(/\/?$/, '/'));
       url.searchParams.set('lat', lat.toFixed(5));
       url.searchParams.set('lon', lon.toFixed(5));
       url.searchParams.set('lang', ['en', 'de', 'fr'].includes(lang) ? lang : 'default');

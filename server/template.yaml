@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  WNIT lookup cache: a polite caching proxy for OpenStreetMap's Nominatim and
+  Photon (Lambda function URL + DynamoDB). Deploy with `sam deploy --guided`.
+
+Parameters:
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Default: '*'
+    Description: >-
+      Websites allowed to call the API from a browser, comma-separated, e.g.
+      https://wnit.app,https://jessepye.github.io  ("*" = any site).
+  ContactEmail:
+    Type: String
+    Default: ''
+    Description: >-
+      Optional. Sent to Nominatim as its "email" parameter so the OpenStreetMap
+      operators can contact you if your traffic ever causes trouble.
+  CacheDays:
+    Type: Number
+    Default: 30
+    MinValue: 1
+    MaxValue: 365
+    Description: How long to keep an answer before asking OpenStreetMap again (map data changes).
+  MaxConcurrency:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    Description: >-
+      Optional cap on simultaneous Lambda runs (0 = no cap). A cap limits the
+      cost if someone hammers the public URL. New AWS accounts sometimes can't
+      reserve concurrency; leave 0 if the deploy complains.
+  BudgetEmail:
+    Type: String
+    Default: ''
+    Description: Optional. Creates a $5/month AWS Budget for the whole account that emails this address at 80%.
+
+Conditions:
+  HasMaxConcurrency: !Not [!Equals [!Ref MaxConcurrency, 0]]
+  HasBudget: !Not [!Equals [!Ref BudgetEmail, '']]
+
+Resources:
+  CacheTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: WNIT lookup cache (Nominatim + Photon)
+      CodeUri: src/
+      Handler: handler.handler
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      MemorySize: 256
+      Timeout: 25
+      ReservedConcurrentExecutions: !If [HasMaxConcurrency, !Ref MaxConcurrency, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref CacheTable
+          CONTACT_EMAIL: !Ref ContactEmail
+          CACHE_DAYS: !Ref CacheDays
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+              Resource: !GetAtt CacheTable.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins: !Ref AllowedOrigins
+          AllowMethods: [GET]
+          ExposeHeaders: [x-wnit-cache]
+          MaxAge: 86400
+
+  # (A public function URL needs two permissions since Oct 2025:
+  # lambda:InvokeFunctionUrl and lambda:InvokeFunction. Current SAM CLI versions
+  # add both automatically for AuthType NONE; if the URL answers 403, upgrade SAM CLI.)
+
+  ApiFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ApiFunction}
+      RetentionInDays: 14
+
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Condition: HasBudget
+    Properties:
+      Budget:
+        BudgetName: !Sub ${AWS::StackName}-monthly
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: 5
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref BudgetEmail
+
+Outputs:
+  ApiUrl:
+    Description: Put this in index.html's <meta name="wnit-api"> tag.
+    Value: !GetAtt ApiFunctionUrl.FunctionUrl
+  CacheTableName:
+    Description: DynamoDB table holding cached answers (browse it in the AWS console).
+    Value: !Ref CacheTable

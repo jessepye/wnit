@@ -3,3 +3,6 @@ e2e-failure-*.png
 out/
 .DS_Store
 __pycache__/
+server/.aws-sam/
+# holds your stack settings (and any emails you entered): keep it out of git
+server/samconfig.toml

@@ -1,0 +1,7 @@
+{
+  "name": "wnit-cache",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Lambda code for the WNIT lookup cache. No dependencies: the Node.js Lambda runtime provides the AWS SDK.",
+  "type": "module"
+}
