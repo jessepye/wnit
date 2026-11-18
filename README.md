@@ -1,19 +1,33 @@
 # WNIT: What Neighborhood Is This?
 
-Open the page and get a map with a pin where you are and the **name of the neighborhood you're standing in**. It works anywhere OpenStreetMap knows the neighborhoods, which turns out to be most cities on Earth.
+Open the page and get a map with a pin where you are and the **name of the neighborhood you're standing in**. Out in the countryside it names the county instead, and at sea the ocean or sea. You can compare what five different data sources say about the same spot.
 
 <p>
-  <img src="docs/screenshots/phone-berlin.jpg" width="260" alt="Phone: You're in Luisenstadt, in Kreuzberg, Berlin, with the neighborhood outlined">
-  <img src="docs/screenshots/phone-tokyo-dark.jpg" width="260" alt="Phone, dark mode: You're in Kitazawa, Setagaya, Japan">
+  <img src="docs/screenshots/phone-seattle-why.jpg" width="250" alt="Seattle: the sources disagree. OpenStreetMap says Madison Valley, Zillow and the best guess say Capitol Hill">
+  <img src="docs/screenshots/phone-panhandle.jpg" width="250" alt="Texas panhandle: You're in Oldham County, near Tascosa, with the county outlined">
+  <img src="docs/screenshots/phone-pacific-dark.jpg" width="250" alt="Middle of the ocean: You're in the North Pacific Ocean">
 </p>
 
 - 📍 Asks for your location, drops a pin, names the neighborhood ("in Montrose · Houston, Texas")
-- ✋ Drag the pin or tap anywhere to check another spot; search an address, or paste `lat, lon`
-- 🗺️ Outlines the neighborhood when OpenStreetMap has it as an area
-- 🔗 Every spot has a shareable link: `…/#30.30600,-97.72900`
-- 🌙 Dark mode, phone and desktop layouts, no ads, no tracking, no API keys
+- 🪜 **Always an answer:** neighborhood → the town you're in → the county (with the nearest town) → state → country → ocean/sea
+- ❓ The **?** button explains *why* that name, lists every level the spot belongs to, and **compares the sources** side by side. Pick one to switch.
+- 🗺️ Outlines the area it names (neighborhood, town or county), using OpenStreetMap shapes plus Zillow's US boundaries
+- ✋ Drag the pin or tap anywhere; search an address, or paste `lat, lon`
+- 🔗 Shareable links: `…/#30.30600,-97.72900` (add `?source=esri` to share a source choice)
+- 🌙 Dark mode, phone + desktop layouts, no ads, no tracking, no API keys
 
-Research behind it (similar sites, data sources, a 51-city coverage test, domains): **[docs/RESEARCH.md](docs/RESEARCH.md)**. What's next, including Android/iOS and Garmin and Galaxy Watch: **[docs/ROADMAP.md](docs/ROADMAP.md)**.
+Research behind it (similar sites, data sources, coverage tests, domains): **[docs/RESEARCH.md](docs/RESEARCH.md)**. What's next, including phone apps and Garmin / Galaxy Watch: **[docs/ROADMAP.md](docs/ROADMAP.md)**.
+
+## Data sources
+
+| Source | Covers | Outlines | How it's used |
+|---|---|---|---|
+| **Best guess** (default) | Everywhere | Yes | OpenStreetMap names; in the 151 Zillow cities, Zillow's drawn boundary wins when the two disagree; sea names at sea |
+| OpenStreetMap · Nominatim | Everywhere | Where mappers drew them | Public API, ≤ 1 request/s |
+| OpenStreetMap · Photon (komoot) | Everywhere | No | Public API |
+| Zillow neighborhoods (2015) | 6,957 neighborhoods in 151 US cities | Yes | Static files in `data/zillow/`, no API |
+| Esri World Geocoder | Everywhere | No | Public endpoint without a key; experimental |
+| IHO Sea Areas (Marine Regions) | All oceans and seas | (not drawn) | Static file `data/seas.json`, only used when nothing on land fits |
 
 ## Run it
 
@@ -28,9 +42,9 @@ Any static file server works. To publish, turn on GitHub Pages for the repo root
 ## Test it
 
 ```sh
-npm test           # unit tests (Node 18+, no installs): naming rules, geometry, rate limiting
-npm run e2e        # browser tests with recorded OSM answers (needs Playwright, see below)
-npm run e2e:live   # same idea against the real services, gently (~10 requests)
+npm test           # 37 unit tests (Node 18+, no installs): naming rules, every source, the fallback ladder
+npm run e2e        # 11 browser scenarios with recorded answers (needs Playwright, see below)
+npm run e2e:live   # a few scenarios against the real services, gently
 ```
 
 Playwright, once per machine: `npm i -D playwright && npx playwright install chromium`
@@ -38,22 +52,31 @@ Playwright, once per machine: `npm i -D playwright && npx playwright install chr
 ## How it works
 
 ```
-browser GPS ──► pin on the map (MapLibre + OpenFreeMap tiles)
-            └─► Nominatim /reverse (zoom 18)  ──► src/hood.js picks the best name
-                Nominatim /reverse (zoom 15/14, polygons) ──► outline, if OSM has one
+pin ──► chosen source ──► Report {neighborhoods, town (in / near), county, state, country, water}
+                               │
+                               ├─► answerFor(): the first level that fits → "You're in · county: Oldham County"
+                               ├─► explain():  plain-language reasons for the "?" panel
+                               └─► findOutline(): Zillow / OSM polygon for that level → drawn on the map
 ```
 
-- **`src/hood.js`** turns OpenStreetMap's address levels (`neighbourhood`, `quarter`, `suburb`, `city_district`…) into one answer. It pushes admin codes down ("Manhattan Community Board 7", "RW 05", "Kitazawa 2", subdivision plats like "Brumback's Addition") so "Upper West Side" and "Kitazawa" win, and it checks that an outline really contains the pin. Pure JS, so it can be reused in a server or API later.
-- **`src/nominatim.js`** is a polite client: one request at a time, at least 1.1 s apart, cached, stale requests dropped, and it sends your browser's languages so you get "Zamalek" rather than "الزمالك".
-- **`src/app.js`** wires up the map, pin, search, card and share button.
-- MapLibre GL JS 5.24.0 is vendored in `vendor/` (BSD-3-Clause), so the site has no third-party script CDN.
+- **`src/sources.js`**: one adapter per source, all returning the same report shape. It also holds the "best guess" merge and the outline finder. OSM checks whether you're actually *inside* a town or only near it, with one lookup at the town's zoom level whose polygon doubles as the outline.
+- **`src/answer.js`**: the fallback ladder, the explanations, and the "this spot is part of" list.
+- **`src/hood.js`**: reads OSM's address levels, demotes admin codes ("Manhattan Community Board 7", "RW 05", "Kitazawa 2"), and does point-in-polygon geometry.
+- **`src/nominatim.js`**: polite fetching: one request at a time, spaced out, cached, stale requests dropped.
+- **`src/app.js`**: the map, card, "?" panel, search and share.
+- **`scripts/build-data.mjs`**: rebuilds `data/` from npm packages:
+  ```sh
+  npm pack hoods@1.2.0 oceans-seas.geojson@0.5.0 && mkdir -p /tmp/hoods /tmp/seas
+  tar xzf hoods-1.2.0.tgz -C /tmp/hoods && tar xzf oceans-seas.geojson-0.5.0.tgz -C /tmp/seas
+  node scripts/build-data.mjs /tmp/hoods/package/data /tmp/seas/package/oceans-seas.geo.json
+  ```
 
 ## Rules of the free services (please keep them)
 
-- **Nominatim** ([policy](https://operations.osmfoundation.org/policies/nominatim/)): at most 1 request/second **for the whole app**, attribution shown, no search-as-you-type. Each lookup uses 1–3 requests, triggered by the user. If WNIT gets real traffic, put a caching API in front, or point `baseUrl` in `src/nominatim.js` at LocationIQ or a self-hosted Nominatim (Roadmap, Phase 3).
-- **OpenFreeMap**: free, no key, attribution required (shown in the map corner, or in the card on phones).
-- **Privacy:** there is no WNIT server. Coordinates you look up go only to OpenStreetMap's Nominatim, to get the name.
+- **Nominatim** ([policy](https://operations.osmfoundation.org/policies/nominatim/)): at most 1 request/second **for the whole app**, attribution shown, no search-as-you-type. A lookup uses 1–3 requests, triggered by the user; the "?" comparison reuses them. If WNIT gets real traffic, put a caching API in front (Roadmap, Phase 3).
+- **Photon / Esri** are only queried when you pick them or open the "?" comparison. Esri's keyless endpoint is undocumented territory for public apps, so it's labeled experimental.
+- **Privacy:** there is no WNIT server. The coordinates you look up go to the services above to get names; Zillow and sea lookups happen in your browser.
 
-## Credits
+## Credits and licenses
 
-Map data and neighborhood names © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (ODbL). Tiles by [OpenFreeMap](https://openfreemap.org/) / [OpenMapTiles](https://openmaptiles.org/). Geocoding by [Nominatim](https://nominatim.org/). The test fixtures in `tests/fixtures/` are recorded Nominatim responses, also © OpenStreetMap contributors.
+Map data and names © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (ODbL). Tiles by [OpenFreeMap](https://openfreemap.org/) / [OpenMapTiles](https://openmaptiles.org/). Geocoding by [Nominatim](https://nominatim.org/), [Photon](https://photon.komoot.io/) (komoot) and [Esri](https://www.esri.com/). Neighborhood boundaries © Zillow, [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) (via the [hoods](https://github.com/zeke/hoods) package), so `data/zillow/` is CC BY-SA 3.0 too. Sea areas: IHO Sea Areas v3, Flanders Marine Institute (2018), [marineregions.org](https://www.marineregions.org/), CC BY 4.0. MapLibre GL JS (BSD-3-Clause) is vendored in `vendor/`. The test fixtures are recorded responses from those services.

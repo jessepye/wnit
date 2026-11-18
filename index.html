@@ -29,11 +29,15 @@
     </header>
 
     <section id="card" class="card" aria-live="polite" data-state="welcome">
-      <p class="eyebrow" id="eyebrow">What neighborhood is this?</p>
+      <div class="card-top">
+        <p class="eyebrow"><span id="eyebrow">What neighborhood is this?</span><span id="tag" class="tag" hidden></span></p>
+        <button id="why" type="button" class="why" aria-haspopup="dialog" aria-label="Why this name? Compare data sources" title="Why this name? Compare sources">?</button>
+      </div>
       <h1 id="hood">Finding you…</h1>
       <p id="broader" class="broader" hidden></p>
       <p id="where" class="where" hidden></p>
       <p id="note" class="note" hidden></p>
+      <p id="via" class="via" hidden></p>
       <div class="actions" id="actions" hidden>
         <button id="share" type="button" class="chip">Share this spot</button>
         <a id="fix" class="chip ghost" target="_blank" rel="noopener" title="Leave a note for OpenStreetMap mappers about this spot">Wrong? Tell OSM</a>
@@ -42,9 +46,41 @@
         © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors ·
         <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a> ·
         <a href="https://openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> ·
-        <a href="https://nominatim.org/" target="_blank" rel="noopener">Nominatim</a>
+        <a href="https://nominatim.org/" target="_blank" rel="noopener">Nominatim</a> ·
+        Zillow (<a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA</a>) ·
+        <a href="https://www.marineregions.org/" target="_blank" rel="noopener">Marine Regions</a>
       </p>
     </section>
+
+    <dialog id="about" class="about" aria-labelledby="about-title">
+      <form method="dialog" class="about-close">
+        <button type="submit" class="icon-btn" aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </form>
+      <p class="eyebrow">Why this name?</p>
+      <h2 id="about-title">…</h2>
+      <div id="about-why" class="about-why"></div>
+
+      <fieldset class="sources">
+        <legend>Data source <span class="hint">· what each one says here</span></legend>
+        <div id="source-list"></div>
+      </fieldset>
+
+      <h3>This spot is part of</h3>
+      <ol id="levels" class="levels"></ol>
+
+      <h3>What counts as a “neighborhood”?</h3>
+      <p class="small">
+        Nobody owns the word. Cities draw official districts, real-estate sites draw their own, and locals argue about
+        the edges. WNIT shows the smallest named area it can find. Where there isn't one it falls back to the town
+        you're in, then the county, state, or country, and at sea the ocean or sea.
+      </p>
+      <p class="small links">
+        <a id="osm-link" target="_blank" rel="noopener">Open this spot on OpenStreetMap</a> ·
+        <a href="https://github.com/jessepye/wnit/blob/main/docs/RESEARCH.md" target="_blank" rel="noopener">How we compared the sources</a>
+      </p>
+    </dialog>
 
     <div id="toast" class="toast" role="status" hidden></div>
 

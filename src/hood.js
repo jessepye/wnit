@@ -11,8 +11,6 @@ const SUBCITY_KEYS = [
   'hamlet',
   'croft',
   'isolated_dwelling',
-  // town/village only count as "sub-city" when a city is also present
-  // (e.g. Jakarta's kelurahan come back as village=Bangka, city=Jakarta).
   'village',
   'town',
   'suburb',
@@ -24,11 +22,16 @@ const SUBCITY_KEYS = [
   'allotments',
 ];
 
+// Small settlements only count as part of a bigger one (Jakarta's kelurahan
+// come back as village=Bangka inside city=Jakarta; Miami's Latin Quarter as a
+// hamlet inside the city). Out in the country, a "hamlet" in the address is
+// just the nearest one, so it is treated as a settlement we may only be near.
+const SETTLEMENT_LIKE = new Set(['hamlet', 'croft', 'isolated_dwelling', 'village', 'town']);
+const SETTLEMENT_KEYS = ['city', 'town', 'village', 'hamlet'];
+
 // Land-use names: often subdivision plats ("Brumback's Addition") or housing
 // estates. Only used when nothing better exists.
 const WEAK_KEYS = new Set(['residential', 'allotments']);
-
-const SETTLEMENT_KEYS = ['city', 'town', 'village', 'municipality', 'county'];
 
 // Admin units and codes that are real boundaries but not what people call
 // their neighborhood: NYC community boards, Indonesian RT/RW units, wards,
@@ -51,13 +54,29 @@ export function looksLikeAdminCode(name) {
 }
 
 export function normalizeName(name) {
-  return String(name)
+  return String(name ?? '')
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/^the\s+/, '')
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
+}
+
+export function sameName(a, b) {
+  return !!a && !!b && normalizeName(a) === normalizeName(b);
+}
+
+/** A sub-city name candidate, flagged so admin codes and land-use names lose. */
+export function candidate(key, name) {
+  return { key, name, adminCode: looksLikeAdminCode(name), weak: WEAK_KEYS.has(key) };
+}
+
+/** Best "you're in ___" name from candidates (most local first): real names, then land-use, then codes. */
+export function rankNeighborhoods(candidates) {
+  const good = candidates.filter((c) => !c.adminCode && !c.weak);
+  const primary = good[0] || candidates.find((c) => !c.adminCode) || candidates[0] || null;
+  return { primary, broader: good.filter((c) => c !== primary) };
 }
 
 /**
@@ -67,53 +86,58 @@ export function normalizeName(name) {
  *   neighborhood: string|null,  // best "you're in ___" answer
  *   level: string|null,         // which OSM address key it came from
  *   broader: string[],          // larger sub-city areas, local -> broad
- *   settlement: string|null,    // city / town / village
+ *   settlement: string|null,    // city / town / village / hamlet
+ *   settlementKind: string|null,
+ *   county: string|null,
  *   region: string|null,        // state / province
  *   country: string|null,
  *   candidates: {key: string, name: string, adminCode: boolean, weak: boolean}[],
  * }}
  */
 export function describePlace(address = {}) {
-  const settlementKey = SETTLEMENT_KEYS.find((k) => address[k]);
+  const settlementKey = SETTLEMENT_KEYS.find((k) => address[k]) || null;
   const settlement = settlementKey ? address[settlementKey] : null;
-  const settlementNorm = settlement ? normalizeName(settlement) : null;
+  const urban = settlementKey === 'city' || settlementKey === 'town';
 
   const candidates = [];
-  const seen = new Set();
+  const seen = new Set(settlement ? [normalizeName(settlement)] : []);
   for (const key of SUBCITY_KEYS) {
     const name = address[key];
     if (!name) continue;
-    if ((key === 'village' || key === 'town') && !address.city) continue;
+    if (SETTLEMENT_LIKE.has(key) && (!urban || key === settlementKey)) continue;
     const norm = normalizeName(name);
-    if (!norm || seen.has(norm) || norm === settlementNorm) continue;
+    if (!norm || seen.has(norm)) continue;
     seen.add(norm);
-    candidates.push({ key, name, adminCode: looksLikeAdminCode(name), weak: WEAK_KEYS.has(key) });
+    candidates.push(candidate(key, name));
   }
 
-  const good = candidates.filter((c) => !c.adminCode && !c.weak);
-  const weak = candidates.filter((c) => !c.adminCode && c.weak);
-  const codes = candidates.filter((c) => c.adminCode);
-  const primary = good[0] || weak[0] || codes[0] || null;
-
+  const { primary, broader } = rankNeighborhoods(candidates);
   const region = address.state || address.region || address.province || null;
+  const county = address.county || address.state_district || address.municipality || null;
   return {
     neighborhood: primary ? primary.name : null,
     level: primary ? primary.key : null,
-    broader: good.filter((c) => c !== primary).map((c) => c.name),
+    broader: broader.map((c) => c.name),
     settlement,
-    region: region && normalizeName(region) !== settlementNorm ? region : null,
+    settlementKind: settlementKey,
+    county: county && !sameName(county, settlement) ? county : null,
+    region: region && !sameName(region, settlement) ? region : null,
     country: address.country || null,
     candidates,
   };
 }
 
 /** "Austin, Texas, United States" (skips blanks and repeats). */
-export function placeLine(place) {
-  const parts = [];
-  for (const p of [place.settlement, place.region, place.country]) {
-    if (p && !parts.some((q) => normalizeName(q) === normalizeName(p))) parts.push(p);
+export function joinPlaces(parts) {
+  const out = [];
+  for (const p of parts) {
+    if (p && !out.some((q) => sameName(q, p))) out.push(p);
   }
-  return parts.join(', ');
+  return out.join(', ');
+}
+
+export function placeLine(place) {
+  return joinPlaces([place.settlement, place.region, place.country]);
 }
 
 // ---------------------------------------------------------------- geometry
@@ -138,38 +162,16 @@ function pointInRings(x, y, rings) {
   return inside;
 }
 
-const TOO_BIG = new Set([
-  'city', 'town', 'village', 'municipality', 'county', 'state_district', 'state',
-  'region', 'province', 'country', 'continent', 'postcode',
-]);
-
-/**
- * Given a Nominatim reverse result requested with polygon_geojson=1, return a
- * boundary worth drawing for `place` (the describePlace() of the same spot),
- * or null. The polygon must be one of the sub-city areas we are naming and
- * must actually contain the point (low-zoom reverse can return a neighbor).
- */
-export function boundaryFrom(result, place, lat, lon) {
-  if (!result || result.error || !result.geojson) return null;
-  const { geojson, name } = result;
-  if (geojson.type !== 'Polygon' && geojson.type !== 'MultiPolygon') return null;
-  if (TOO_BIG.has(result.addresstype)) return null;
-  if (!['boundary', 'place', 'landuse'].includes(result.category)) return null;
-  if (!name) return null;
-  const match = place.candidates.find((c) => normalizeName(c.name) === normalizeName(name));
-  if (!match) return null;
-  if (!pointInGeometry(lon, lat, geojson)) return null;
-  return {
-    name,
-    geometry: geojson,
-    isPrimary: normalizeName(name) === normalizeName(place.neighborhood || ''),
-    adminCode: match.adminCode,
-  };
-}
-
-/** Of the boundaries found for a spot, the one to draw: the named neighborhood, else a real name, else anything. */
-export function pickBoundary(found) {
-  return found.find((b) => b.isPrimary) || found.find((b) => !b.adminCode) || found[0] || null;
+/** Rough area in square degrees (outer rings only); fine for "which is smaller". */
+export function roughArea(geometry) {
+  const polys = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
+  let total = 0;
+  for (const [ring] of polys) {
+    let a = 0;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) a += (ring[j][0] + ring[i][0]) * (ring[j][1] - ring[i][1]);
+    total += Math.abs(a / 2);
+  }
+  return total;
 }
 
 /** [[west, south], [east, north]] of a Polygon/MultiPolygon. */
@@ -188,6 +190,42 @@ export function bboxOf(geometry) {
     }
   }
   return [[w, s], [e, n]];
+}
+
+export function distanceKm(lat1, lon1, lat2, lon2) {
+  const rad = Math.PI / 180;
+  const a =
+    Math.sin(((lat2 - lat1) * rad) / 2) ** 2 +
+    Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(((lon2 - lon1) * rad) / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(a));
+}
+
+const TOO_BIG = new Set([
+  'city', 'town', 'village', 'municipality', 'county', 'state_district', 'state',
+  'region', 'province', 'country', 'continent', 'postcode',
+]);
+
+/**
+ * Given a Nominatim reverse result requested with polygon_geojson=1, return an
+ * outline worth drawing, or null. Its name must be one of `names` (the areas
+ * we are naming) and it must actually contain the point: low-zoom reverse
+ * lookups can return a neighbor. `allowBig` permits city/county/state outlines.
+ */
+export function boundaryFrom(result, { names = [], primary = null, allowBig = false } = {}, lat, lon) {
+  if (!result || result.error || !result.geojson) return null;
+  const { geojson, name } = result;
+  if (geojson.type !== 'Polygon' && geojson.type !== 'MultiPolygon') return null;
+  if (!allowBig && TOO_BIG.has(result.addresstype)) return null;
+  if (!['boundary', 'place', 'landuse'].includes(result.category)) return null;
+  const match = names.find((n) => sameName(n, name));
+  if (!match) return null;
+  if (!pointInGeometry(lon, lat, geojson)) return null;
+  return { name, geometry: geojson, isPrimary: sameName(name, primary), adminCode: looksLikeAdminCode(name) };
+}
+
+/** Of the outlines found for a spot, the one to draw: the headline itself, else a real name, else anything. */
+export function pickBoundary(found) {
+  return found.find((b) => b.isPrimary) || found.find((b) => !b.adminCode) || found[0] || null;
 }
 
 // ------------------------------------------------------------------- input

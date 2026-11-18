@@ -1,19 +1,19 @@
-// Tiny client for the public OpenStreetMap Nominatim API.
+// Polite HTTP helpers for the free public services WNIT uses.
 //
-// The public server's usage policy (https://operations.osmfoundation.org/policies/nominatim/)
+// createPoliteFetcher: one request at a time, at least `minIntervalMs` apart,
+// cached by URL, and queued requests whose AbortSignal fired are dropped
+// (stale pin drags never hit the network).
+//
+// createNominatim: OpenStreetMap's Nominatim geocoder on top of that. The
+// public server's usage policy (https://operations.osmfoundation.org/policies/nominatim/)
 // allows user-triggered lookups at no more than 1 request/second for the whole
-// app, with attribution, and no search-as-you-type. So this client:
-//   * runs requests one at a time, at least `minIntervalMs` apart,
-//   * caches by URL (coordinates are rounded to ~1 m),
-//   * drops queued requests whose AbortSignal fired (stale pin drags).
-// Swap `baseUrl` for a self-hosted Nominatim or a compatible provider
-// (LocationIQ, OpenCage...) when traffic outgrows the free server.
+// app, with attribution, and no search-as-you-type. Swap `baseUrl` for a
+// self-hosted Nominatim or a compatible provider (LocationIQ...) if traffic grows.
 
-export function createNominatim({
-  baseUrl = 'https://nominatim.openstreetmap.org',
+export function createPoliteFetcher({
   fetchImpl = (...args) => globalThis.fetch(...args),
   minIntervalMs = 1100,
-  languages = defaultLanguages,
+  label = 'request',
 } = {}) {
   const queue = [];
   const cache = new Map();
@@ -45,15 +45,10 @@ export function createNominatim({
     pumping = false;
   }
 
-  function request(path, params, signal) {
-    const url = new URL(path, `${baseUrl.replace(/\/$/, '')}/`);
-    const all = { format: 'jsonv2', ...params, 'accept-language': languages() };
-    for (const [k, v] of Object.entries(all)) {
-      if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
-    }
-    const key = url.toString();
+  /** GET a JSON URL (string or URL). Identical URLs share one request. */
+  function getJson(url, { signal } = {}) {
+    const key = String(url);
     if (cache.has(key)) return cache.get(key);
-
     const promise = new Promise((resolve, reject) => {
       queue.push({
         signal,
@@ -61,7 +56,7 @@ export function createNominatim({
         reject,
         run: async () => {
           const res = await fetchImpl(key, { headers: { Accept: 'application/json' }, signal });
-          if (!res.ok) throw new Error(`Nominatim answered HTTP ${res.status}`);
+          if (!res.ok) throw new Error(`${label} answered HTTP ${res.status}`);
           return res.json();
         },
       });
@@ -72,9 +67,33 @@ export function createNominatim({
     return promise;
   }
 
+  return { getJson };
+}
+
+export function createNominatim({
+  baseUrl = 'https://nominatim.openstreetmap.org',
+  fetchImpl,
+  minIntervalMs = 1100,
+  languages = defaultLanguages,
+} = {}) {
+  const http = createPoliteFetcher({ fetchImpl, minIntervalMs, label: 'Nominatim' });
+
+  function request(path, params, signal) {
+    const url = new URL(path, `${baseUrl.replace(/\/$/, '')}/`);
+    const all = { format: 'jsonv2', ...params, 'accept-language': languages() };
+    for (const [k, v] of Object.entries(all)) {
+      if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
+    }
+    return http.getJson(url, { signal });
+  }
+
   return {
-    /** Reverse geocode. zoom 18 = full address; 14-15 = neighborhood-level object. */
-    reverse(lat, lon, { zoom = 18, polygon = false, signal } = {}) {
+    /**
+     * Reverse geocode. zoom 18 = full address; 15/14 = neighborhood-level object;
+     * 10/12/13 = city/town/village; 8 = county; 5 = state. `polygon` adds its outline
+     * (simplified by `threshold` degrees).
+     */
+    reverse(lat, lon, { zoom = 18, polygon = false, threshold = 0.0001, signal } = {}) {
       return request(
         'reverse',
         {
@@ -82,7 +101,7 @@ export function createNominatim({
           lon: lon.toFixed(5),
           zoom,
           addressdetails: 1,
-          ...(polygon ? { polygon_geojson: 1, polygon_threshold: 0.0001 } : {}),
+          ...(polygon ? { polygon_geojson: 1, polygon_threshold: threshold } : {}),
         },
         signal,
       );
@@ -94,7 +113,7 @@ export function createNominatim({
   };
 }
 
-function defaultLanguages() {
+export function defaultLanguages() {
   const langs = globalThis.navigator?.languages?.length ? globalThis.navigator.languages : ['en'];
   return langs.join(',');
 }

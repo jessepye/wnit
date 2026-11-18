@@ -18,6 +18,7 @@ import {
 
 const fixture = (name) => JSON.parse(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url)));
 const place = (name) => describePlace(fixture(`reverse-${name}`).address);
+const opts = (p) => ({ names: p.candidates.map((c) => c.name), primary: p.neighborhood });
 
 const cases = [
   // fixture,              neighborhood,            broader,                                   place line
@@ -95,26 +96,26 @@ test('pointInGeometry handles polygons, misses and non-polygons', () => {
 
 test('boundaryFrom picks polygons that match the named areas and contain the pin', () => {
   const berlin = place('berlin-kreuzberg');
-  const quarter = boundaryFrom(fixture('boundary-z15-berlin-kreuzberg'), berlin, 52.497, 13.403);
+  const quarter = boundaryFrom(fixture('boundary-z15-berlin-kreuzberg'), opts(berlin), 52.497, 13.403);
   assert.equal(quarter?.name, 'Luisenstadt');
   assert.equal(quarter.isPrimary, true);
 
-  const suburb = boundaryFrom(fixture('boundary-z14-berlin-kreuzberg'), berlin, 52.497, 13.403);
+  const suburb = boundaryFrom(fixture('boundary-z14-berlin-kreuzberg'), opts(berlin), 52.497, 13.403);
   assert.equal(suburb?.name, 'Kreuzberg');
   assert.equal(suburb.isPrimary, false);
 
   const chicago = place('chicago-wicker-park');
-  assert.equal(boundaryFrom(fixture('boundary-z14-chicago-wicker-park'), chicago, 41.9088, -87.6796)?.name, 'West Town');
+  assert.equal(boundaryFrom(fixture('boundary-z14-chicago-wicker-park'), opts(chicago), 41.9088, -87.6796)?.name, 'West Town');
 
   const austin = place('austin-hyde-park');
-  assert.equal(boundaryFrom(fixture('boundary-z15-austin-hyde-park'), austin, 30.306, -97.729), null, 'node, not polygon');
-  assert.equal(boundaryFrom(fixture('boundary-z14-austin-hyde-park'), austin, 30.306, -97.729), null, 'whole city');
+  assert.equal(boundaryFrom(fixture('boundary-z15-austin-hyde-park'), opts(austin), 30.306, -97.729), null, 'node, not polygon');
+  assert.equal(boundaryFrom(fixture('boundary-z14-austin-hyde-park'), opts(austin), 30.306, -97.729), null, 'whole city');
 
   // right shape, wrong place: name not in this spot's hierarchy
-  assert.equal(boundaryFrom(fixture('boundary-z14-chicago-wicker-park'), berlin, 52.497, 13.403), null);
+  assert.equal(boundaryFrom(fixture('boundary-z14-chicago-wicker-park'), opts(berlin), 52.497, 13.403), null);
   // name matches but the pin is outside the polygon
-  assert.equal(boundaryFrom(fixture('boundary-z14-berlin-kreuzberg'), berlin, 52.52, 13.35), null);
-  assert.equal(boundaryFrom(fixture('reverse-atlantic-ocean'), berlin, 0, -30), null);
+  assert.equal(boundaryFrom(fixture('boundary-z14-berlin-kreuzberg'), opts(berlin), 52.52, 13.35), null);
+  assert.equal(boundaryFrom(fixture('reverse-atlantic-ocean'), opts(berlin), 0, -30), null);
 });
 
 test('pickBoundary prefers the named neighborhood, then real names over codes', () => {

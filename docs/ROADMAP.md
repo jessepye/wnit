@@ -1,16 +1,14 @@
 # WNIT roadmap
 
-## Where things stand: the MVP works
+## Where things stand
 
-Open the page and it asks for your location, drops a pin, and says **"You're in Hyde Park · Austin, Texas"**. It also does these, all free with no API keys:
+**v0.1, the MVP:** open the page and it asks for your location, drops a pin, and says **"You're in Hyde Park · Austin, Texas"**. You can drag the pin, tap the map, search, share a link, and use dark mode. Outlines appear where OpenStreetMap has them, and a "Wrong? Tell OSM" link goes to OpenStreetMap.
 
-- drag the pin, or tap anywhere, to look up another spot
-- search an address or place (or paste `lat, lon`)
-- outline the neighborhood when OpenStreetMap has it as an area
-- show the broader areas ("in Kreuzberg · Friedrichshain-Kreuzberg")
-- share a link to the exact spot (`#30.30600,-97.72900`)
-- dark mode, phone and desktop layouts
-- a "Wrong? Tell OSM" link so locals can fix the map
+**v0.2, "neighborhood is messy":**
+
+- **Always an answer:** neighborhood → the town you're *in* → the county ("near Tascosa") → state → country → ocean or sea (IHO sea areas).
+- **"?" panel:** why this name, every level the spot belongs to, and what each of 5 sources says (best guess, OSM Nominatim, OSM Photon, Zillow, Esri). Tap one to switch; the choice is remembered and shareable with `?source=`.
+- **More outlines:** Zillow's 2015 boundaries for 6,957 neighborhoods in 151 US cities ship with the site. Towns and counties get outlined when they're the answer.
 
 ## Phase 1: put it online (an evening, about $10–15)
 
@@ -29,7 +27,12 @@ Open the page and it asks for your location, drops a pin, and says **"You're in 
 - **"Hoods I've been in"** history, kept on the device (`localStorage`).
 - **PWA offline shell** (service worker), so it opens instantly and can be installed. The manifest and icons are already in place.
 - **Search-as-you-type** using Photon, which allows it. The public Nominatim forbids autocomplete.
-- **Second opinion:** when OSM's answer is weak (a subdivision plat or a ward), also ask Photon, whose `district` field was right in Seattle, Boise and Albuquerque in my test.
+- **Lakes:** add Natural Earth's public-domain lakes, so mid–Lake Michigan says "Lake Michigan" instead of "Michigan".
+- **More outlines:**
+  - Who's On First neighbourhood polygons (global, CC BY)
+  - Overpass `is_in`, which lists *every* OSM area containing the pin, not just the nearest point
+  - the 2017 Zillow set, once its license is clear
+- **"Best guess" tuning:** use the "?" comparisons you collect to decide which source should win where. A small "this one's right" button could log your vote locally.
 
 ## Phase 3: a tiny API (when traffic or the apps need it)
 

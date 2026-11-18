@@ -182,7 +182,37 @@ I checked these on Nov 18, 2026: DNS NS records via Google's DNS-over-HTTPS, plu
 
 ---
 
-## 5. Recommendation
+## 5. Comparing sources on the same spot (added in v0.2)
+
+Since "neighborhood" is a fuzzy idea, the app now shows what each source says, and the "?" panel explains its pick. These are live answers from Nov 18, 2026:
+
+| Spot | OSM · Nominatim | OSM · Photon | Zillow (2015) | Esri | Best guess |
+|---|---|---|---|---|---|
+| Austin, Hyde Park | Hyde Park | Hyde Park | Hyde Park ✏️ | Hyde Park | **Hyde Park** (Zillow outline) |
+| Seattle, E Roy St | Madison Valley | Madison Valley (district: Capitol Hill) | Capitol Hill ✏️ | Broadway | **Capitol Hill** (OSM only has points here, Zillow has a boundary) |
+| Chicago, Wicker Park | Wicker Park | (not tested) | West Town ✏️ | (not tested) | **Wicker Park**, in West Town (names agree, so keep OSM's more local one) |
+| Berlin, Prinzenstraße | Luisenstadt ✏️ | Tempelhofer Vorstadt (district: Kreuzberg) | – | Kreuzberg | **Luisenstadt** |
+| Tokyo, Shimokitazawa | Kitazawa 2 → Kitazawa | Kitazawa 2 → Setagaya (the ward) | – | "2" → Kitazawa | **Kitazawa** (block numbers skipped) |
+| Texas panhandle ranchland | Tascosa (a ghost town by proximity) | nothing | – | Vega (postal town) | **Oldham County**, near Tascosa ✏️ |
+| Pacific, 5°N 140°W | nothing | nothing | – | Pacific Ocean | **North Pacific Ocean** (IHO) |
+| Gulf of Mexico, 25°N 90°W | nothing | nothing | – | **"Gulf of America"** | **Gulf of Mexico** (IHO) |
+| Lake Michigan, mid-lake | Michigan (state) | nothing | – | Oceana County | **Michigan** (no source names the lake yet) |
+
+✏️ = an outline is drawn. Lessons:
+
+- **In / near matters.** Out in the country, OSM and Esri both name a town that's miles away. WNIT checks whether that town's boundary actually contains the pin; if not, it names the county and says "near Tascosa". The same lookup returns the county outline.
+- **Zillow fixes the US's biggest gap.** OSM often marks US neighborhoods only as points. Zillow's 2015 boundaries (151 cities) give real outlines and caught Seattle's Capitol Hill. Where Zillow is coarser (Chicago's "West Town"), the best guess keeps OSM's more local name inside it.
+- **Even oceans are political.** Esri now says "Gulf of America", and the IHO sea areas say "Gulf of Mexico". The comparison makes that visible instead of hiding it.
+
+Sources considered and skipped for now:
+
+- **BigDataCloud's** free API may only be used for the device's own current location, not a draggable pin ([fair-use policy](https://www.bigdatacloud.com/support/fair-use-policy-for-free-client-side-reverse-geocoding-api)).
+- **GeoNames** needs a username baked into the page.
+- **Zillow's 2017 release** (about 17k neighborhoods, 650+ cities) sits on an EPA server under conflicting licenses (CC0 on data.gov, CC BY-NC on the mirror). The 2015 set is clean CC BY-SA, so we ship that.
+- **Esri** works without a key, but Esri's docs are ambiguous about anonymous use ([reverseGeocode docs](https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm)), so it's labeled experimental and only called when you pick it or open the comparison.
+- **Sea names:** the [IHO Sea Areas](https://www.marineregions.org/) arrive via the [`oceans-seas.geojson`](https://github.com/alvinometric/oceans-seas.geojson) package (CC BY 4.0). Lakes aren't covered yet.
+
+## 6. Recommendation
 
 1. **Ship the MVP as-is** on GitHub Pages (free, HTTPS, custom domain). It uses only free, keyless OSM services and covers the planet.
 2. **When traffic grows** past a handful of people at once, add a tiny caching API (a Cloudflare Worker) between the app and Nominatim, or switch `baseUrl` to LocationIQ (Nominatim-compatible, 5k/day free). The same API then serves the phone and watch apps.

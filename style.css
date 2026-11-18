@@ -218,6 +218,234 @@ body {
   color: var(--accent);
 }
 
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tag {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  vertical-align: 1px;
+}
+
+.why {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin: -6px -8px 0 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.why:hover,
+.why:focus-visible {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.via {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------- "why this name?" dialog ---------- */
+
+.about {
+  width: min(460px, calc(100vw - 24px));
+  max-height: min(86vh, 760px);
+  margin: auto;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: var(--shadow);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.about::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.about-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  margin: -10px -12px 0 0;
+}
+
+.about h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.about h3,
+.about legend {
+  margin: 18px 0 8px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.about legend .hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.about-why p {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.small {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.links {
+  margin-top: 12px;
+}
+
+.links a {
+  color: var(--fg);
+}
+
+.sources {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.src {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  gap: 2px 10px;
+  align-items: baseline;
+  padding: 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.src + .src {
+  margin-top: 6px;
+}
+
+.src:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
+.src input {
+  margin: 0;
+  accent-color: var(--accent);
+  align-self: center;
+}
+
+.src-name {
+  font-weight: 650;
+  font-size: 14.5px;
+}
+
+.src-says {
+  justify-self: end;
+  text-align: right;
+  font-size: 14.5px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.src-says small {
+  display: block;
+  font-weight: 500;
+  font-size: 11.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.src-says.pending {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.src-blurb {
+  grid-column: 2 / -1;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.levels {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.levels li {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14.5px;
+}
+
+.levels .lvl {
+  color: var(--muted);
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+
+.levels .skip {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.levels .why-note {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+@media (max-width: 719px) {
+  .about {
+    margin: auto 0 0;
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 88vh;
+    border-radius: 18px 18px 0 0;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+}
+
 #hood {
   margin: 0;
   font-size: clamp(26px, 7vw, 34px);
