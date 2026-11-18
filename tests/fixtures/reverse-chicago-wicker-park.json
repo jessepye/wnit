@@ -1,0 +1,35 @@
+{
+ "place_id": 372276459,
+ "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+ "osm_type": "way",
+ "osm_id": 209864879,
+ "lat": "41.9088561",
+ "lon": "-87.6795170",
+ "category": "building",
+ "type": "yes",
+ "place_rank": 30,
+ "importance": 8.51537346455637e-05,
+ "addresstype": "building",
+ "name": "",
+ "display_name": "1521, North Hoyne Avenue, Wicker Park, West Town, Chicago, West Chicago Township, Cook County, Illinois, 60647, United States",
+ "address": {
+  "house_number": "1521",
+  "road": "North Hoyne Avenue",
+  "quarter": "Wicker Park",
+  "suburb": "West Town",
+  "city": "Chicago",
+  "municipality": "West Chicago Township",
+  "county": "Cook County",
+  "state": "Illinois",
+  "ISO3166-2-lvl4": "US-IL",
+  "postcode": "60647",
+  "country": "United States",
+  "country_code": "us"
+ },
+ "boundingbox": [
+  "41.9087993",
+  "41.9088998",
+  "-87.6796517",
+  "-87.6793825"
+ ]
+}

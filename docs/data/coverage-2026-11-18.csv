@@ -1,0 +1,52 @@
+region,city,lat,lon,expected,nominatim_hood,nominatim_key,nominatim_all_subcity,subcity_polygons,subcity_points,photon_hood,city_returned,expected_found
+US,Austin TX,30.2468,-97.7501,Bouldin Creek,South River City,neighbourhood,neighbourhood=South River City,,South River City (place=neighbourhood),South River City,Austin,no
+US,Austin TX,30.306,-97.729,Hyde Park,Hyde Park,neighbourhood,neighbourhood=Hyde Park,,Hyde Park (place=neighbourhood),Hyde Park,Austin,yes
+US,Austin TX,30.26,-97.713,East Cesar Chavez,Holly,neighbourhood,neighbourhood=Holly,"Holly (place=neighbourhood,R)",,Paul O. Simms,Austin,no
+US,New York NY,40.714,-73.9566,Williamsburg,Williamsburg,quarter,quarter=Williamsburg; suburb=Brooklyn,"Brooklyn (boundary=administrative,R); Kings County (boundary=administrative,R)",Williamsburg (place=quarter),Brooklyn,New York,yes
+US,New York NY,40.787,-73.9754,Upper West Side,Manhattan Community Board 7,neighbourhood,neighbourhood=Manhattan Community Board 7; quarter=Upper West Side; suburb=Manhattan,"Manhattan Community Board 7 (boundary=administrative,R); Manhattan (boundary=administrative,R); New York County (boundary=administrative,R)",Upper West Side (place=quarter),Manhattan,New York,yes
+US,San Francisco CA,37.7599,-122.4148,Mission,Mission,suburb,suburb=Mission,,Mission (place=suburb),Mission,San Francisco,yes
+US,Chicago IL,41.9088,-87.6796,Wicker Park,Wicker Park,quarter,quarter=Wicker Park; suburb=West Town,"West Town (boundary=administrative,R)",Wicker Park (place=quarter),West Town,Chicago,yes
+US,Los Angeles CA,34.0869,-118.2702,Silver Lake,Silver Lake,quarter,quarter=Silver Lake; suburb=Echo Park,,,Echo Park,Los Angeles,yes
+US,Seattle WA,47.6253,-122.3222,Capitol Hill,Madison Valley,suburb,suburb=Madison Valley,,Madison Valley (place=suburb); Capitol Hill (place=suburb),Capitol Hill,Seattle,yes
+US,Boston MA,42.3097,-71.1151,Jamaica Plain,Jamaica Plain,suburb,suburb=Jamaica Plain,"Jamaica Plain (place=suburb,R)",,Jamaica Plain,Boston,yes
+US,Houston TX,29.7457,-95.391,Montrose,Hyde Park,neighbourhood,neighbourhood=Hyde Park; suburb=Montrose,"Hyde Park (landuse=residential,W); Montrose (place=suburb,W)",,Montrose,Houston,yes
+US,Denver CO,39.7605,-105.0115,Highland,Lower Highland,neighbourhood,neighbourhood=Lower Highland; suburb=Highland,"Highland (place=suburb,R)",Lower Highland (place=neighbourhood),Highland,Denver,yes
+US,Atlanta GA,33.759,-84.352,Inman Park,Little Five Points,neighbourhood,neighbourhood=Little Five Points,,Little Five Points (place=neighbourhood),,Atlanta,no
+US,Philadelphia PA,39.9712,-75.134,Fishtown,River Wards,suburb,suburb=River Wards,"River Wards (boundary=administrative,R)",,North Philadelphia,Philadelphia,no
+US,Miami FL,25.7663,-80.219,Little Havana,Latin Quarter,hamlet,hamlet=Latin Quarter,,Latin Quarter (place=hamlet),Latin Quarter,Miami,no
+US,Minneapolis MN,44.9485,-93.298,Uptown,Lowry Hill East,neighbourhood,neighbourhood=Lowry Hill East; quarter=Uptown; suburb=Bde Maka Ska-Isles,"Lowry Hill East (boundary=administrative,R); Bde Maka Ska-Isles (boundary=administrative,R)",Uptown (place=quarter),Bde Maka Ska-Isles,Minneapolis,yes
+US,Portland OR,45.559,-122.645,Alberta,Alberta,neighbourhood,neighbourhood=Alberta; suburb=Vernon,"Vernon (boundary=administrative,R)",Alberta (place=neighbourhood),Vernon,Portland,yes
+US,Nashville TN,36.178,-86.75,East Nashville,East Nashville,suburb,suburb=East Nashville,,East Nashville (place=suburb),East Nashville,Nashville,yes
+US,Phoenix AZ,33.495,-111.97,Arcadia,Arcadia,quarter,quarter=Arcadia; suburb=Camelback East,"Arcadia (place=quarter,R); Camelback East (boundary=administrative,R)",,Camelback East,Phoenix,yes
+US,Boise ID,43.63,-116.205,North End,Brumback's Addition,residential,residential=Brumback's Addition; suburb=North End,"Brumback's Addition (landuse=residential,W)",North End (place=suburb),North End,Boise,yes
+US,Des Moines IA,41.593,-93.634,Sherman Hill,Good Park,neighbourhood,neighbourhood=Good Park,,Good Park (place=neighbourhood),Cheatom Park,Des Moines,no
+US,Albuquerque NM,35.08,-106.618,Nob Hill,Southeast Heights4350,residential,residential=Southeast Heights4350; suburb=Nob Hill,"Southeast Heights4350 (landuse=residential,W)",Nob Hill (place=suburb),Nob Hill,Albuquerque,yes
+US,Bozeman MT,45.6793,-111.0386,Downtown,Downtown,neighbourhood,neighbourhood=Downtown,,Downtown (place=neighbourhood),,Bozeman,yes
+US,Plano TX (suburb),33.0198,-96.6989,,,,,,,,Plano,n/a
+US,rural Iowa,42.0,-93.5,,,,,,,,Nevada,n/a
+World,Toronto CA,43.655,-79.402,Kensington Market,Kensington Market,neighbourhood,neighbourhood=Kensington Market; quarter=Downtown,"Kensington Market (boundary=administrative,R); Downtown (place=quarter,W); University—Rosedale (boundary=administrative,R)",,University—Rosedale,Toronto,yes
+World,Vancouver CA,49.268,-123.168,Kitsilano,Kitsilano,suburb,suburb=Kitsilano,"Kitsilano (boundary=administrative,R)",,Kitsilano,Vancouver,yes
+World,Mexico City MX,19.417,-99.162,Roma Norte,Roma Norte,neighbourhood,neighbourhood=Roma Norte; suburb=Roma; borough=Cuauhtémoc,"Roma Norte (boundary=administrative,R); Ciudad de México (boundary=administrative,R); Cuauhtémoc (boundary=administrative,R)",Roma (place=suburb),Ciudad de México,Ciudad de México,yes
+World,London UK,51.5246,-0.078,Shoreditch,Shoreditch,suburb,suburb=Shoreditch; city_district=London Borough of Hackney,"London Borough of Hackney (boundary=administrative,R)",Shoreditch (place=suburb),Shoreditch,Greater London,yes
+World,Dublin IE,53.322,-6.265,Rathmines,Rathmines West C Ward 1986,city_district,city_district=Rathmines West C Ward 1986,"Rathmines West C ED (boundary=administrative,R)",,Rathmines West C Ward 1986,Dublin,yes
+World,Paris FR,48.859,2.362,Marais,Quartier des Archives,city_block,city_block=Quartier des Archives; suburb=Paris 3e Arrondissement; city_district=Paris,"Quartier des Archives (boundary=administrative,R); Paris 3e Arrondissement (boundary=administrative,R); Paris (boundary=administrative,R); Paris (boundary=administrative,R)",,Le Marais,Paris,yes
+World,Berlin DE,52.497,13.403,Kreuzberg,Luisenstadt,quarter,quarter=Luisenstadt; suburb=Kreuzberg; borough=Friedrichshain-Kreuzberg,"Luisenstadt (boundary=historic,R); Kreuzberg (boundary=administrative,R); Friedrichshain-Kreuzberg (boundary=administrative,R)",,Kreuzberg,Berlin,yes
+World,Amsterdam NL,52.354,4.893,De Pijp,Oude Pijp,neighbourhood,neighbourhood=Oude Pijp; suburb=Zuid,"Oude Pijp (place=neighbourhood,R); Zuid (place=suburb,R)",,Zuid,Amsterdam,yes
+World,Madrid ES,40.426,-3.705,Malasaña,Malasaña,neighbourhood,neighbourhood=Malasaña; quarter=Universidad; city_district=Centro,"Universidad (boundary=administrative,R); Centro (boundary=administrative,R)",Malasaña (place=neighbourhood),Centro,Madrid,yes
+World,Rome IT,41.889,12.47,Trastevere,Trastevere,neighbourhood,neighbourhood=Trastevere; quarter=Trastevere; suburb=Municipio Roma I,"Trastevere (place=quarter,R); Municipio Roma I (boundary=administrative,R)",Trastevere (place=neighbourhood),Municipio Roma I,Roma,yes
+World,Istanbul TR,40.984,29.027,Moda,Moda,quarter,quarter=Moda; suburb=Caferağa Mahallesi,"Caferağa Mahallesi (boundary=administrative,R); Kadıköy (boundary=administrative,R)",Moda (place=quarter),Caferağa,Kadıköy,yes
+World,Cairo EG,30.061,31.219,Zamalek,الجبلايه,neighbourhood,neighbourhood=الجبلايه; suburb=الزمالك,"الجبلايه (place=neighbourhood,W)",الزمالك (place=suburb),الزمالك,,no
+World,Lagos NG,6.509,3.378,Yaba,Yaba,suburb,suburb=Yaba,,Yaba (place=suburb),Yaba,,yes
+World,Nairobi KE,-1.268,36.811,Westlands,Highridge location,neighbourhood,neighbourhood=Highridge location; city_block=Highridge sublocation; suburb=Highridge division; city_district=Westlands,"Highridge sublocation (boundary=administrative,R); Highridge location (boundary=administrative,R); Highridge division (boundary=administrative,R); Westlands (boundary=administrative,R)",,Highridge division,Nairobi,yes
+World,Cape Town ZA,-33.938,18.472,Observatory,Observatory,suburb,suburb=Observatory,"Observatory (place=suburb,R)",,Observatory,Cape Town,yes
+World,Mumbai IN,19.06,72.83,Bandra,Adarsh Nagar,neighbourhood,neighbourhood=Adarsh Nagar; suburb=Khar; city_district=Mumbai Zone 3,"H/W Ward (boundary=administrative,R); Mumbai Zone 3 (boundary=administrative,R)",Adarsh Nagar (place=neighbourhood); Khar (place=suburb),Bandra West,Mumbai,yes
+World,Bangkok TH,13.732,100.583,Khlong Tan Nuea,แขวงคลองตันเหนือ,quarter,quarter=แขวงคลองตันเหนือ; suburb=เขตวัฒนา,"แขวงคลองตันเหนือ (boundary=administrative,R); เขตวัฒนา (boundary=administrative,R)",,วัฒนา,กรุงเทพมหานคร,no
+World,Jakarta ID,-6.26,106.813,Kemang,RW 05,city_block,city_block=RW 05; suburb=Mampang Prapatan; city_district=Jakarta Selatan,"RW 05 (boundary=administrative,R); Bangka (boundary=administrative,R); Mampang Prapatan (boundary=administrative,R); Jakarta Selatan (boundary=administrative,R)",,Mampang Prapatan,Daerah Khusus Ibukota Jakarta,no
+World,Shanghai CN,31.21,121.45,,小木桥,quarter,quarter=小木桥; suburb=天平路街道,"天平路街道 (boundary=administrative,R)",小木桥 (place=quarter),天平路街道,徐汇区,n/a
+World,Seoul KR,37.556,126.923,Hongdae,홍대거리,neighbourhood,neighbourhood=홍대거리; quarter=동교동; suburb=서교동; borough=마포구,"서교동 (boundary=administrative,R); 마포구 (boundary=administrative,R)",홍대거리 (place=neighbourhood); 동교동 (place=quarter),서교동,서울특별시,no
+World,Tokyo JP,35.661,139.668,Kitazawa,北沢二丁目,neighbourhood,neighbourhood=北沢二丁目; quarter=北沢,"北沢二丁目 (boundary=administrative,R); 北沢 (boundary=administrative,R); 世田谷区 (boundary=administrative,R)",,世田谷区,世田谷区,no
+World,Sydney AU,-33.886,151.211,Surry Hills,Strawberry Hills,neighbourhood,neighbourhood=Strawberry Hills; suburb=Surry Hills,"Surry Hills (boundary=administrative,R)",Strawberry Hills (place=neighbourhood),Surry Hills,Sydney,yes
+World,Melbourne AU,-37.798,144.978,Fitzroy,Fitzroy,suburb,suburb=Fitzroy,"Fitzroy (boundary=administrative,R)",,Fitzroy,Melbourne,yes
+World,Sao Paulo BR,-23.553,-46.691,Vila Madalena,Vila Madalena,suburb,suburb=Vila Madalena,"Pinheiros (boundary=administrative,R)",Vila Madalena (place=suburb),Vila Madalena,São Paulo,yes
+World,Buenos Aires AR,-34.588,-58.43,Palermo,Palermo Soho,neighbourhood,neighbourhood=Palermo Soho; suburb=Palermo,"Palermo (boundary=administrative,R)",Palermo Soho (place=neighbourhood),Palermo,Buenos Aires,yes
+World,Lima PE,-12.12,-77.03,Miraflores,Miraflores,suburb,suburb=Miraflores,,Miraflores (place=suburb),Miraflores,Miraflores,yes

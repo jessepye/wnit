@@ -1,0 +1,344 @@
+:root {
+  --accent: #e8590c;
+  --accent-ink: #ffffff;
+  --bg: #f4f3f1;
+  --fg: #1c1b1a;
+  --muted: #5d5a57;
+  --panel: rgba(255, 255, 255, 0.96);
+  --border: rgba(0, 0, 0, 0.08);
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --radius: 16px;
+  --gap: 12px;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #ff7a33;
+    --accent-ink: #1a0d05;
+    --bg: #121212;
+    --fg: #f1f0ee;
+    --muted: #b0aca7;
+    --panel: rgba(30, 30, 32, 0.95);
+    --border: rgba(255, 255, 255, 0.1);
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#map {
+  position: fixed;
+  inset: 0;
+}
+
+/* ---------- top bar: search + locate ---------- */
+
+.topbar {
+  position: fixed;
+  z-index: 3;
+  top: calc(env(safe-area-inset-top) + var(--gap));
+  left: calc(env(safe-area-inset-left) + var(--gap));
+  right: calc(env(safe-area-inset-right) + var(--gap));
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.search,
+.locate,
+.results,
+.card,
+.toast {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  border-radius: 14px;
+  min-width: 0;
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 16px; /* >=16px stops iOS zooming on focus */
+  padding: 12px 4px 12px 14px;
+}
+
+.search input::placeholder {
+  color: var(--muted);
+}
+
+.search:focus-within {
+  border-color: var(--accent);
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+  border-radius: 12px;
+}
+
+.locate {
+  border-radius: 14px;
+  width: 48px;
+  height: 48px;
+}
+
+.locate .dot {
+  fill: var(--accent);
+  stroke: none;
+}
+
+.locate[aria-busy='true'] svg {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.search[aria-busy='true'] button svg {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.results {
+  grid-column: 1 / -1;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  border-radius: 14px;
+  max-height: 45vh;
+  overflow: auto;
+}
+
+.results button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.results button:hover,
+.results button:focus-visible {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  outline: none;
+}
+
+.results .empty {
+  padding: 10px 12px;
+  color: var(--muted);
+}
+
+/* ---------- neighborhood card ---------- */
+
+.card {
+  position: fixed;
+  z-index: 2;
+  left: calc(env(safe-area-inset-left) + var(--gap));
+  right: calc(env(safe-area-inset-right) + var(--gap));
+  bottom: calc(env(safe-area-inset-bottom) + var(--gap));
+  border-radius: var(--radius);
+  padding: 14px 18px 12px;
+}
+
+/* On phones the map's own attribution would hide under the card, so the
+   card carries the credits instead (desktop uses the map control). */
+.credits {
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.credits a {
+  color: inherit;
+}
+
+.eyebrow {
+  margin: 0 0 2px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+#hood {
+  margin: 0;
+  font-size: clamp(26px, 7vw, 34px);
+  line-height: 1.1;
+  font-weight: 760;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+
+.card[data-state='loading'] #hood,
+.card[data-state='locating'] #hood {
+  color: var(--muted);
+}
+
+.broader,
+.where,
+.note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.broader {
+  color: var(--fg);
+  font-weight: 560;
+}
+
+.note {
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.chip.ghost {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--border);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.toast {
+  position: fixed;
+  z-index: 4;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 76px);
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+/* ---------- map controls ---------- */
+
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+  font-size: 11px;
+}
+
+@media (max-width: 719px) {
+  /* pinch to zoom on phones; the +/- buttons and attribution would hide behind the card */
+  .maplibregl-ctrl-group,
+  .maplibregl-ctrl-attrib {
+    display: none;
+  }
+}
+
+/* ---------- wider screens: side panel ---------- */
+
+@media (min-width: 720px) {
+  .topbar {
+    right: auto;
+    width: 400px;
+  }
+
+  .card {
+    right: auto;
+    bottom: auto;
+    top: calc(env(safe-area-inset-top) + var(--gap) + 48px + 10px);
+    width: 400px;
+    padding-bottom: 16px;
+  }
+
+  .credits {
+    display: none;
+  }
+
+  .results {
+    position: relative;
+    z-index: 4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

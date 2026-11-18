@@ -1,0 +1,32 @@
+{
+ "place_id": 373914714,
+ "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+ "osm_type": "way",
+ "osm_id": 16040110,
+ "lat": "42.0000340",
+ "lon": "-93.5018503",
+ "category": "highway",
+ "type": "residential",
+ "place_rank": 26,
+ "importance": 0.0533620332646677,
+ "addresstype": "residential",
+ "name": "600th Avenue",
+ "display_name": "600th Avenue, Nevada, Grant Township, Story County, Iowa, 50201, United States",
+ "address": {
+  "road": "600th Avenue",
+  "town": "Nevada",
+  "municipality": "Grant Township",
+  "county": "Story County",
+  "state": "Iowa",
+  "ISO3166-2-lvl4": "US-IA",
+  "postcode": "50201",
+  "country": "United States",
+  "country_code": "us"
+ },
+ "boundingbox": [
+  "41.9940450",
+  "42.0346790",
+  "-93.5019830",
+  "-93.5018470"
+ ]
+}

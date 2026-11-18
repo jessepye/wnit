@@ -1,0 +1,5 @@
+node_modules/
+e2e-failure-*.png
+out/
+.DS_Store
+__pycache__/

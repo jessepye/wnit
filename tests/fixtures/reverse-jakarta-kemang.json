@@ -1,0 +1,34 @@
+{
+ "place_id": 31785509,
+ "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+ "osm_type": "node",
+ "osm_id": 4819936403,
+ "lat": "-6.2600162",
+ "lon": "106.8131174",
+ "category": "man_made",
+ "type": "tower",
+ "place_rank": 30,
+ "importance": 8.313649195082044e-05,
+ "addresstype": "man_made",
+ "name": "BTS",
+ "display_name": "BTS, Jalan Kemang I-E, RW 05, Bangka, Mampang Prapatan, South Jakarta, Special Capital Region of Jakarta, 12730, Indonesia",
+ "address": {
+  "man_made": "BTS",
+  "road": "Jalan Kemang I-E",
+  "city_block": "RW 05",
+  "village": "Bangka",
+  "suburb": "Mampang Prapatan",
+  "city_district": "South Jakarta",
+  "city": "Special Capital Region of Jakarta",
+  "ISO3166-2-lvl4": "ID-JK",
+  "postcode": "12730",
+  "country": "Indonesia",
+  "country_code": "id"
+ },
+ "boundingbox": [
+  "-6.2600662",
+  "-6.2599662",
+  "106.8130674",
+  "106.8131674"
+ ]
+}

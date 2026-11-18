@@ -1,0 +1,33 @@
+{
+ "place_id": 419371809,
+ "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+ "osm_type": "node",
+ "osm_id": 13899147659,
+ "lat": "52.4973412",
+ "lon": "13.4030723",
+ "category": "amenity",
+ "type": "shower",
+ "place_rank": 30,
+ "importance": 8.875486381318407e-05,
+ "addresstype": "amenity",
+ "name": "",
+ "display_name": "113-119, Prinzenstraße, Luisenstadt, Kreuzberg, Friedrichshain-Kreuzberg, Berlin, 10969, Germany",
+ "address": {
+  "house_number": "113-119",
+  "road": "Prinzenstraße",
+  "quarter": "Luisenstadt",
+  "suburb": "Kreuzberg",
+  "borough": "Friedrichshain-Kreuzberg",
+  "city": "Berlin",
+  "ISO3166-2-lvl4": "DE-BE",
+  "postcode": "10969",
+  "country": "Germany",
+  "country_code": "de"
+ },
+ "boundingbox": [
+  "52.4972912",
+  "52.4973912",
+  "13.4030223",
+  "13.4031223"
+ ]
+}

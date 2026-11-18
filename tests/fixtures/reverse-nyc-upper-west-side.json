@@ -1,0 +1,35 @@
+{
+ "place_id": 360482931,
+ "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+ "osm_type": "node",
+ "osm_id": 2758274685,
+ "lat": "40.7869881",
+ "lon": "-73.9752484",
+ "category": "place",
+ "type": "house",
+ "place_rank": 30,
+ "importance": 9.175936522464359e-05,
+ "addresstype": "place",
+ "name": "",
+ "display_name": "175, West 85th Street, Upper West Side, Manhattan Community Board 7, Manhattan, New York County, New York, 10024, United States",
+ "address": {
+  "house_number": "175",
+  "road": "West 85th Street",
+  "quarter": "Upper West Side",
+  "neighbourhood": "Manhattan Community Board 7",
+  "suburb": "Manhattan",
+  "county": "New York County",
+  "city": "New York",
+  "state": "New York",
+  "ISO3166-2-lvl4": "US-NY",
+  "postcode": "10024",
+  "country": "United States",
+  "country_code": "us"
+ },
+ "boundingbox": [
+  "40.7869381",
+  "40.7870381",
+  "-73.9752984",
+  "-73.9751984"
+ ]
+}
