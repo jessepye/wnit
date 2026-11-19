@@ -36,9 +36,10 @@ const WEAK_KEYS = new Set(['residential', 'allotments']);
 // Admin units and codes that are real boundaries but not what people call
 // their neighborhood: NYC community boards, Indonesian RT/RW units, wards,
 // numbered zones, Japanese chome blocks, names with long numbers...
+// (Not the word "ward" by itself: Houston's Third Ward or Fifth Ward are real
+// neighborhood names. Numbered wards are caught by the number rules below.)
 const ADMIN_CODE_PATTERNS = [
   /\bcommunity (board|district)\b/i,
-  /\bward\b/i,
   /^(rt|rw)\.?\s*\d+/i,
   /\b(zone|sector|district|division|block|area)\s*\d+\b/i,
   /^municipio\b/i,

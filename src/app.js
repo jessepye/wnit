@@ -6,12 +6,14 @@
 import { answerFor, explain, levelsOf, wantsWater } from './answer.js';
 import { apiBase } from './config.js';
 import { bboxOf, parseLatLon } from './hood.js';
+import { createLabelSource } from './labels.js';
 import { createNominatim } from './nominatim.js';
 import {
   SOURCE_IDS,
   SOURCE_INFO,
   createAutoSource,
   createEsriSource,
+  createLabelsSource,
   createOsmSource,
   createOutlineFinder,
   createPhotonSource,
@@ -47,8 +49,10 @@ const API = apiBase();
 const nominatim = createNominatim(API ? { baseUrl: `${API}/nominatim`, minIntervalMs: 250 } : {});
 const zillow = createZillowSource();
 const osm = createOsmSource(nominatim);
+const labels = createLabelSource(); // names printed on the map (same tiles the map draws)
 const SOURCES = {
-  auto: createAutoSource({ osm, zillow }),
+  auto: createAutoSource({ osm, zillow, labels }),
+  labels: createLabelsSource({ osm, labels }),
   osm,
   photon: createPhotonSource(API ? { baseUrl: `${API}/photon` } : {}),
   zillow,
@@ -295,7 +299,12 @@ function renderAnswer(s) {
     return;
   }
   const gps = s.accuracy > 150 ? `Your location is approximate (±${Math.round(s.accuracy)} m). Drag the pin if it's off.` : '';
-  const outlineNote = outline && !outline.isPrimary ? `Outline shows ${outline.name}.` : '';
+  const outlineNote =
+    !outline || outline.isPrimary
+      ? ''
+      : outline.alias
+        ? `Outline: Zillow's boundary, which it calls “${outline.name}”.`
+        : `Outline shows ${outline.name}.`;
   const coords = answer.kind === 'water' ? formatCoords(s.lat, s.lon) : '';
   render({
     state: 'result',

@@ -66,7 +66,7 @@ test('looksLikeAdminCode', () => {
   for (const s of ['RW 05', 'RT 3', 'Mumbai Zone 3', 'Municipio Roma I', 'Census Tract 12', 'Southeast Heights4350', '北沢二丁目', 'Kitazawa 2', 'Phase 2B']) {
     assert.ok(looksLikeAdminCode(s), s);
   }
-  for (const s of ['Hyde Park', 'Upper West Side', 'Kreuzberg', 'East Village', '3rd Arrondissement', 'Roma Norte']) {
+  for (const s of ['Hyde Park', 'Upper West Side', 'Kreuzberg', 'East Village', '3rd Arrondissement', 'Roma Norte', 'Third Ward', 'Fifth Ward']) {
     assert.ok(!looksLikeAdminCode(s), s);
   }
 });

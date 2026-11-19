@@ -18,14 +18,19 @@ import {
   roughArea,
   sameName,
 } from './hood.js';
+import { pickLabels } from './labels.js';
 import { createPoliteFetcher, defaultLanguages } from './nominatim.js';
 
-export const SOURCE_IDS = ['auto', 'osm', 'photon', 'zillow', 'esri'];
+export const SOURCE_IDS = ['auto', 'labels', 'osm', 'photon', 'zillow', 'esri'];
 
 export const SOURCE_INFO = {
   auto: {
     label: 'Best guess',
-    blurb: "OpenStreetMap worldwide, Zillow's drawn boundaries in 151 US cities, official sea names at sea.",
+    blurb: "The map's own labels, outlined with OpenStreetMap or Zillow boundaries, falling back to towns, counties and sea names.",
+  },
+  labels: {
+    label: 'Map labels (OpenStreetMap)',
+    blurb: 'The neighborhood names printed on this map, nearest to your pin. Points, so no outlines of their own.',
   },
   osm: {
     label: 'OpenStreetMap · Nominatim',
@@ -270,18 +275,66 @@ export function createZillowSource({ baseUrl = 'data/zillow/', fetchImpl = (...a
   };
 }
 
+// -------------------------------------------------------------- Map labels
+
+/** The basemap's own neighborhood labels, with OSM's address lookup for town/county/state. */
+export function createLabelsSource({ osm, labels }) {
+  return {
+    id: 'labels',
+    async lookup(lat, lon, { signal } = {}) {
+      const [o, ranked] = await Promise.all([osm.lookup(lat, lon, { signal }), labels.nearby(lat, lon)]);
+      const { primary, broader } = pickLabels(ranked);
+      if (!primary) return { ...o, source: 'labels', neighborhoods: [], note: 'The map has no neighborhood labels near this spot.' };
+      return {
+        ...o,
+        source: 'labels',
+        neighborhoods: [primary, ...broader].map((p) => candidate(p.cls, p.name)),
+        settlementStatus: 'in',
+        label: primary,
+      };
+    },
+  };
+}
+
 // --------------------------------------------------------------- Best guess
 
-/** OpenStreetMap for names everywhere; Zillow's drawn boundaries win in US cities. */
-export function createAutoSource({ osm, zillow }) {
+/**
+ * The names people actually use: the map label nearest the pin wins. Outlines
+ * come from Zillow or OpenStreetMap boundaries with the same name. Without a
+ * label nearby (tiles unavailable, countryside), OpenStreetMap's address
+ * lookup decides, with Zillow's drawn boundaries breaking ties in US cities.
+ */
+export function createAutoSource({ osm, zillow, labels = null }) {
   return {
     id: 'auto',
     async lookup(lat, lon, { signal } = {}) {
-      const [o, z] = await Promise.all([osm.lookup(lat, lon, { signal }), zillow.lookup(lat, lon).catch(() => null)]);
+      const [o, z, ranked] = await Promise.all([
+        osm.lookup(lat, lon, { signal }),
+        zillow.lookup(lat, lon).catch(() => null),
+        labels ? labels.nearby(lat, lon).catch(() => null) : null,
+      ]);
       const report = { ...o, source: 'auto' };
-      const zHood = z?.neighborhoods?.[0]?.name;
-      if (!zHood) return report;
+      const zHood = z?.neighborhoods?.[0]?.name || null;
       const osmPrimary = o.neighborhoods.find((n) => !n.adminCode && !n.weak)?.name || null;
+
+      const { primary, broader } = pickLabels(ranked || []);
+      if (primary) {
+        return {
+          ...report,
+          neighborhoods: [primary, ...broader].map((p) => candidate(p.cls, p.name)),
+          settlement: o.settlement || z?.settlement || null,
+          settlementStatus: 'in',
+          county: o.county || z?.county || null,
+          region: o.region || z?.region || null,
+          country: o.country || z?.country || null,
+          countryCode: o.countryCode || (z ? 'us' : null),
+          outline: z?.outline || null, // only drawn if its name matches, or as a labeled stand-in
+          label: primary,
+          merge: { label: primary.name, osm: osmPrimary, zillow: zHood, agreed: [osmPrimary, zHood].some((n) => sameName(n, primary.name)) },
+        };
+      }
+
+      if (!zHood) return report;
       const agreed = o.neighborhoods.some((n) => sameName(n.name, zHood));
       return {
         ...report,
@@ -348,6 +401,11 @@ export function createOutlineFinder({ nominatim, zillow }) {
         found.push({ ...b, from: 'osm' });
         if (b.isPrimary) break;
       }
+    }
+    // Last resort: a drawn boundary around the pin under another name (Zillow
+    // calls Austin's Mueller "RMMA"). Better than nothing; the note says so.
+    if (!found.length && answer.kind === 'neighborhood' && report.outline && pointInGeometry(lon, lat, report.outline.geometry)) {
+      return { ...report.outline, isPrimary: false, alias: true, adminCode: false };
     }
     return pickBoundary(found);
   };

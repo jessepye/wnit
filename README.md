@@ -8,7 +8,7 @@ Open the page and get a map with a pin where you are and the **name of the neigh
   <img src="docs/screenshots/phone-pacific-dark.jpg" width="250" alt="Middle of the ocean: You're in the North Pacific Ocean">
 </p>
 
-- 📍 Asks for your location, drops a pin, names the neighborhood ("in Montrose · Houston, Texas")
+- 📍 Asks for your location, drops a pin, names the neighborhood: by default, the name **printed on the map** nearest your pin ("Third Ward · Houston, Texas")
 - 🪜 **Always an answer:** neighborhood → the town you're in → the county (with the nearest town) → state → country → ocean/sea
 - ❓ The **?** button explains *why* that name, lists every level the spot belongs to, and **compares the sources** side by side. Pick one to switch.
 - 🗺️ Outlines the area it names (neighborhood, town or county), using OpenStreetMap shapes plus Zillow's US boundaries
@@ -16,13 +16,14 @@ Open the page and get a map with a pin where you are and the **name of the neigh
 - 🔗 Shareable links: `…/#30.30600,-97.72900` (add `?source=esri` to share a source choice)
 - 🌙 Dark mode, phone + desktop layouts, no ads, no tracking, no API keys
 
-Research behind it (similar sites, data sources, coverage tests, domains): **[docs/RESEARCH.md](docs/RESEARCH.md)**. What's next, including phone apps and Garmin / Galaxy Watch: **[docs/ROADMAP.md](docs/ROADMAP.md)**.
+**New here? Start with [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)**, a plain-language walkthrough of the whole thing. Research behind it (similar sites, data sources, coverage tests, domains): **[docs/RESEARCH.md](docs/RESEARCH.md)**. What's next, including phone apps and Garmin / Galaxy Watch: **[docs/ROADMAP.md](docs/ROADMAP.md)**.
 
 ## Data sources
 
 | Source | Covers | Outlines | How it's used |
 |---|---|---|---|
-| **Best guess** (default) | Everywhere | Yes | OpenStreetMap names; in the 151 Zillow cities, Zillow's drawn boundary wins when the two disagree; sea names at sea |
+| **Best guess** (default) | Everywhere | Yes | The map label nearest the pin; outlines from OSM or Zillow boundaries with that name; without a label, OSM's address lookup (Zillow breaks ties); sea names at sea |
+| Map labels (OpenStreetMap) | Cities worldwide | No (points) | Read from the same vector tiles the map draws, so usually no extra download |
 | OpenStreetMap · Nominatim | Everywhere | Where mappers drew them | Public API, ≤ 1 request/s |
 | OpenStreetMap · Photon (komoot) | Everywhere | No | Public API |
 | Zillow neighborhoods (2015) | 6,957 neighborhoods in 151 US cities | Yes | Static files in `data/zillow/`, no API |
@@ -46,8 +47,8 @@ Any static file server works. Where to put it for real: **[docs/HOSTING.md](docs
 ## Test it
 
 ```sh
-npm test           # 48 unit tests (Node 18+, no installs): naming rules, every source, the fallback ladder, the cache
-npm run e2e        # 12 browser scenarios with recorded answers (needs Playwright, see below)
+npm test           # 56 unit tests (Node 18+, no installs): naming rules, every source, map labels, the fallback ladder, the cache
+npm run e2e        # 13 browser scenarios with recorded answers (needs Playwright, see below)
 npm run e2e:live   # a few scenarios against the real services, gently
 ```
 
@@ -64,6 +65,7 @@ pin ──► chosen source ──► Report {neighborhoods, town (in / near), c
 ```
 
 - **`src/sources.js`**: one adapter per source, all returning the same report shape. It also holds the "best guess" merge and the outline finder. OSM checks whether you're actually *inside* a town or only near it, with one lookup at the town's zoom level whose polygon doubles as the outline.
+- **`src/labels.js`**: reads the neighborhood labels out of the map's vector tiles (a ~100-line tile reader) and picks the one nearest the pin.
 - **`src/answer.js`**: the fallback ladder, the explanations, and the "this spot is part of" list.
 - **`src/hood.js`**: reads OSM's address levels, demotes admin codes ("Manhattan Community Board 7", "RW 05", "Kitazawa 2"), and does point-in-polygon geometry.
 - **`src/nominatim.js`**: polite fetching: one request at a time, spaced out, cached, stale requests dropped.

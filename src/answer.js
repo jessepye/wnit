@@ -88,6 +88,7 @@ export function answerFor(report) {
 
 const WHO = {
   auto: 'OpenStreetMap',
+  labels: "The map's labels",
   osm: 'OpenStreetMap',
   photon: 'Photon (OpenStreetMap data)',
   zillow: "Zillow's neighborhood boundaries",
@@ -103,7 +104,14 @@ export function explain(answer, report, { outline = null } = {}) {
   switch (answer.kind) {
     case 'neighborhood': {
       const m = report.merge;
-      if (m && !m.agreed && m.osm) {
+      if (report.label) {
+        out.push(`“${answer.title}” is the neighborhood name printed on the map nearest your pin (${formatKm(report.label.km)} away; OpenStreetMap data).`);
+        const others = [];
+        if (m?.osm && !sameName(m.osm, answer.title)) others.push(`OpenStreetMap's address lookup says “${m.osm}”`);
+        if (m?.zillow && !sameName(m.zillow, answer.title)) others.push(`Zillow's boundary says “${m.zillow}”`);
+        if (others.length) out.push(`${others.join(', and ')}.`);
+        else if (m?.agreed) out.push('The other sources agree.');
+      } else if (m && !m.agreed && m.osm) {
         out.push(`OpenStreetMap guesses “${m.osm}”, but Zillow has a drawn boundary for “${m.zillow}” that contains your pin, so we went with Zillow.`);
       } else if (m?.agreed && sameName(m.zillow, answer.title)) {
         out.push(`OpenStreetMap and Zillow's boundaries agree: this is “${answer.title}”.`);
@@ -114,8 +122,10 @@ export function explain(answer, report, { outline = null } = {}) {
       } else {
         out.push(`${who} calls the smallest named area here “${answer.title}”.`);
       }
-      if (outline?.isPrimary) out.push('Its boundary is outlined on the map.');
+      if (outline?.alias) out.push(`The outline is Zillow's boundary for this area, which Zillow calls “${outline.name}”.`);
+      else if (outline?.isPrimary) out.push('Its boundary is outlined on the map.');
       else if (outline) out.push(`The outline shows ${outline.name}, a larger area this belongs to.`);
+      else if (report.label) out.push('Map labels are points, not boundaries, so near the edge between two neighborhoods this is a best guess.');
       else if (report.source === 'osm' || report.source === 'auto') {
         out.push('Mappers marked it with a single point rather than a boundary, so near its edges this is a best guess.');
       } else out.push("This source doesn't share boundaries, so there's no outline.");
@@ -149,6 +159,10 @@ export function explain(answer, report, { outline = null } = {}) {
       out.push(report.note || `${who} has no name for this spot.`);
   }
   return out;
+}
+
+function formatKm(km) {
+  return km < 1 ? `${Math.max(10, Math.round((km * 1000) / 10) * 10)} m` : `${km.toFixed(1)} km`;
 }
 
 /** Friendly label for a level key in the "this spot is part of" list. */
