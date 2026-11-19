@@ -3,11 +3,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { answerFor, emptyReport, explain, levelsOf, wantsWater } from '../src/answer.js';
+import { createLabelSource } from '../src/labels.js';
 import { createNominatim } from '../src/nominatim.js';
 import {
   cleanZillow,
   createAutoSource,
   createEsriSource,
+  createLabelsSource,
   createOsmSource,
   createOutlineFinder,
   createPhotonSource,
@@ -22,12 +24,15 @@ function setup() {
   const nominatim = createNominatim({ fetchImpl, minIntervalMs: 0, languages: EN });
   const zillow = createZillowSource({ baseUrl: 'http://localhost/data/zillow/', fetchImpl });
   const osm = createOsmSource(nominatim);
+  const labels = createLabelSource({ fetchImpl, languages: EN });
   return {
     log,
     nominatimCalls: () => log.filter((u) => u.includes('nominatim')).length,
     osm,
     zillow,
-    auto: createAutoSource({ osm, zillow }),
+    auto: createAutoSource({ osm, zillow }), // without map labels: the older rules
+    autoWithLabels: (l = labels) => createAutoSource({ osm, zillow, labels: l }),
+    labelsSource: createLabelsSource({ osm, labels }),
     photon: createPhotonSource({ fetchImpl, languages: EN }),
     esri: createEsriSource({ fetchImpl, languages: EN }),
     findOutline: createOutlineFinder({ nominatim, zillow }),
@@ -188,6 +193,43 @@ test('Best guess outside the US is plain OpenStreetMap', async () => {
   const report = await auto.lookup(52.497, 13.403);
   assert.equal(answerFor(report).title, 'Luisenstadt');
   assert.equal(report.merge, undefined);
+});
+
+// ------------------------------------------------------- with map labels
+
+test('Best guess + map labels, Houston: "Third Ward" (not Zillow\'s "Southeast"), outlined by OSM', async () => {
+  const { autoWithLabels, findOutline } = setup();
+  const report = await autoWithLabels().lookup(29.72437, -95.3576);
+  const a = answerFor(report);
+  assert.deepEqual([a.kind, a.title, a.where], ['neighborhood', 'Third Ward', 'Houston, Texas, United States']);
+  assert.equal(report.merge.zillow, 'Southeast');
+  const outline = await findOutline(a, report, 29.72437, -95.3576);
+  assert.deepEqual([outline?.name, outline?.isPrimary, outline?.from], ['Third Ward', true, 'osm']);
+  const why = explain(a, report, { outline }).join(' ');
+  assert.match(why, /printed on the map nearest your pin \(1\d0 m away/);
+  assert.match(why, /Zillow's boundary says “Southeast”/);
+});
+
+test('Best guess + map labels, Mueller: the label beats Zillow\'s "Rmma", whose boundary stays as a stand-in', async () => {
+  const { autoWithLabels, findOutline } = setup();
+  const mueller = { nearby: async () => [{ name: 'Mueller Community', cls: 'neighbourhood', km: 0.41, score: 0.41 }] };
+  const report = await autoWithLabels(mueller).lookup(30.29743, -97.70436);
+  const a = answerFor(report);
+  assert.deepEqual([a.title, a.where], ['Mueller Community', 'Austin, Texas, United States']);
+  const outline = await findOutline(a, report, 30.29743, -97.70436);
+  assert.deepEqual([outline?.name, outline?.alias], ['Rmma', true]);
+  assert.match(explain(a, report, { outline }).join(' '), /which Zillow calls “Rmma”/);
+});
+
+test('Map labels as their own source; no label nearby falls back to the older rules', async () => {
+  const { labelsSource, autoWithLabels } = setup();
+  const houston = await labelsSource.lookup(29.72437, -95.3576);
+  assert.equal(answerFor(houston).title, 'Third Ward');
+  assert.ok(levelsOf(houston).some((r) => r.label === 'suburb / district' && r.name === 'Third Ward'));
+  // Seattle: no recorded tile, so no labels -> OSM + Zillow rules (Zillow's drawn Capitol Hill)
+  const seattle = await autoWithLabels().lookup(47.6253, -122.3222);
+  assert.equal(answerFor(seattle).title, 'Capitol Hill');
+  assert.equal(seattle.label, undefined);
 });
 
 test('Outlines: OSM neighborhood polygon, and Zillow borrowed for other sources', async () => {

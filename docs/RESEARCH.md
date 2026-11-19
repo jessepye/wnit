@@ -212,6 +212,33 @@ Sources considered and skipped for now:
 - **Esri** works without a key, but Esri's docs are ambiguous about anonymous use ([reverseGeocode docs](https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm)), so it's labeled experimental and only called when you pick it or open the comparison.
 - **Sea names:** the [IHO Sea Areas](https://www.marineregions.org/) arrive via the [`oceans-seas.geojson`](https://github.com/alvinometric/oceans-seas.geojson) package (CC BY 4.0). Lakes aren't covered yet.
 
+### v0.4: the names on the map are the names people use
+
+Testing the live site turned up two odd defaults:
+
+- **Mueller, Austin → "Rmma".** Zillow's Austin neighborhoods are the City's planning areas, and this one is named after the old *Robert Mueller Municipal Airport*. OpenStreetMap says "Mueller Community".
+- **Third Ward, Houston → "Southeast".** OpenStreetMap does say "Third Ward", but WNIT threw it away because a rule treated any name with "ward" in it as an administrative code (fixed). The best guess then trusted Zillow's coarse "Southeast".
+
+The names you'd actually say were already on screen: the basemap's labels. They are OpenStreetMap place points (`place=neighbourhood/quarter/suburb`) inside OpenFreeMap's vector tiles. WNIT now reads them from the same tiles the map draws, and the label nearest the pin wins; suburb-sized labels count as a bit closer. Nearest labels in 13 cities:
+
+| Spot | Nearest map label |
+|---|---|
+| Mueller, Austin | Mueller Community (410 m) |
+| Third Ward, Houston | Third Ward (140 m) |
+| E Roy St, Seattle | Capitol Hill (330 m), not "Madison Valley" |
+| Hyde Park, Austin | Hyde Park (220 m) |
+| Chicago | Wicker Park |
+| NYC | Upper West Side |
+| Berlin | Kreuzberg, not the historic "Luisenstadt" |
+| Paris | Le Marais |
+| Tokyo | Kitazawa (block numbers skipped) |
+| London | Shoreditch |
+| Mexico City | Colonia Roma Norte, in Roma |
+| San Francisco | Mission District |
+| South Congress, Austin | South River City |
+
+Outlines still come from OSM or Zillow boundaries with the same name. When only a differently named boundary surrounds the pin, it's drawn as a labeled stand-in ("Zillow's boundary, which it calls “Rmma”"). The catch: labels are points, so near the line between two neighborhoods the nearest label can be the neighbor's.
+
 ## 6. Recommendation
 
 1. **Ship the MVP as-is** on GitHub Pages (free, HTTPS, custom domain). It uses only free, keyless OSM services and covers the planet.

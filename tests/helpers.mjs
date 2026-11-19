@@ -16,7 +16,23 @@ export const AREAS = [
   { lat: 35.4, lon: -102.3, name: 'tx-panhandle' },
   { lat: 47.6253, lon: -122.3222, name: 'seattle-capitol-hill' },
   { lat: 0, lon: -140, name: 'pacific' },
+  { lat: 29.72437, lon: -95.3576, name: 'houston-third-ward' },
 ];
+
+/**
+ * Map tiles: the TileJSON (points at a fake "test" tileset) and the one real
+ * OpenFreeMap tile we recorded (Houston's Third Ward, z14). Returns
+ * {status, body} or null for URLs that aren't tiles.
+ */
+export function mockTile(url) {
+  const u = new URL(url);
+  if (u.hostname !== 'tiles.openfreemap.org') return null;
+  if (u.pathname === '/planet') return { status: 200, type: 'application/json', body: readFileSync(new URL('./fixtures/tilejson.json', import.meta.url)) };
+  const m = u.pathname.match(/^\/planet\/test\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+  if (!m) return null; // styles, fonts, sprites: not mocked
+  const file = new URL(`./fixtures/tile-${m[1]}-${m[2]}-${m[3]}.pbf`, import.meta.url);
+  return existsSync(file) ? { status: 200, type: 'application/x-protobuf', body: readFileSync(file) } : { status: 404, type: 'text/plain', body: Buffer.from('') };
+}
 
 const areaAt = (lat, lon) => AREAS.find((a) => Math.abs(a.lat - lat) < 0.02 && Math.abs(a.lon - lon) < 0.02);
 const NOMINATIM_ERROR = () => maybe('reverse-atlantic-ocean');
@@ -52,6 +68,11 @@ export function makeFetch({ log = [] } = {}) {
   const fetchImpl = async (url) => {
     const href = String(url);
     log.push(href);
+    const tile = mockTile(href);
+    if (tile) {
+      const bytes = new Uint8Array(tile.body);
+      return { ok: tile.status === 200, status: tile.status, json: async () => JSON.parse(Buffer.from(bytes).toString('utf8')), arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) };
+    }
     let body = mockBody(href);
     if (body === null) {
       const path = new URL(href).pathname.replace(/^\//, '');

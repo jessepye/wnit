@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 import { startServer } from '../scripts/serve.mjs';
 import { startApiServer } from '../server/local.mjs';
-import { mockBody } from './helpers.mjs';
+import { mockBody, mockTile } from './helpers.mjs';
 
 const require = createRequire(import.meta.url);
 const { chromium, devices } = require('playwright');
@@ -70,7 +70,12 @@ async function scenario(name, contextOptions, fn) {
         route.fulfill({ status: 200, contentType: 'application/json', body: mockBody(route.request().url()) }),
       );
     }
-    await page.route('https://tiles.openfreemap.org/**', (route) => route.abort());
+    // Map tiles: the TileJSON + one recorded tile (Houston) for the label source; the
+    // map style itself is blocked, so the map stays blank and results stay deterministic.
+    await page.route('https://tiles.openfreemap.org/**', (route) => {
+      const tile = mockTile(route.request().url());
+      return tile ? route.fulfill({ status: tile.status, contentType: tile.type, body: tile.body }) : route.abort();
+    });
   }
   try {
     await fn(page, nominatim);
@@ -191,9 +196,10 @@ if (!LIVE) {
     await page.locator('#about[open]').waitFor();
     assert.equal(await text(page, '#about-title'), '“Hyde Park”');
     assert.match(await text(page, '#about-why'), /agree/);
-    assert.equal(await page.locator('.src').count(), 5);
+    assert.equal(await page.locator('.src').count(), 6);
     await allSourcesAnswered(page);
     for (const id of ['auto', 'osm', 'photon', 'zillow', 'esri']) assert.match(await says(page, id).textContent(), /^Hyde Park/, id);
+    assert.match(await says(page, 'labels').textContent(), /^Austin/, 'no recorded Austin tile, so labels fall back to the city');
     const levels = await page.locator('#levels li').allTextContents();
     assert.ok(levels.some((l) => /county\s*Travis County/i.test(l)), levels.join(' / '));
 
@@ -221,6 +227,20 @@ if (!LIVE) {
     await page.evaluate(() => window.wnit.go({ lat: 52.497, lon: 13.403 }));
     await hood(page, /Not in Zillow/);
     assert.match(await text(page, '#note'), /151 US cities/);
+  });
+
+  await scenario('map labels name the spot: Third Ward, outlined, with Zillow\'s "Southeast" explained', {}, async (page) => {
+    await page.goto(`${BASE}#29.72437,-95.35760`);
+    await hood(page, /^Third Ward$/);
+    assert.equal(await text(page, '#tag'), 'neighborhood');
+    assert.equal(await text(page, '#where'), 'Houston, Texas, United States');
+    await waitBoundary(page, 'Third Ward');
+    await page.click('#why');
+    await allSourcesAnswered(page);
+    assert.match(await text(page, '#about-why'), /printed on the map nearest your pin/);
+    assert.match(await text(page, '#about-why'), /Zillow's boundary says “Southeast”/);
+    assert.match(await says(page, 'labels').textContent(), /^Third Ward/);
+    assert.match(await says(page, 'zillow').textContent(), /^Southeast/);
   });
 
   await scenario('source choice survives a reload', {}, async (page) => {
@@ -258,6 +278,16 @@ if (!LIVE) {
     for (const id of ['auto', 'osm', 'photon', 'zillow', 'esri']) console.log(`     ${id.padEnd(6)} says: ${(await says(page, id).textContent()).trim()}`);
     await shot(page, 'desktop-austin-why');
   });
+
+  for (const [name, hash] of [['mueller', '30.29743,-97.70436'], ['third-ward', '29.72437,-95.35760']]) {
+    await scenario(`LIVE: map labels at ${name} (phone)`, { ...devices['iPhone 13'] }, async (page) => {
+      await page.goto(`${BASE}#${hash}`);
+      await page.waitForFunction(() => document.querySelector('#card').dataset.state === 'result', null, { timeout: 30000 });
+      await page.waitForTimeout(3500);
+      console.log(`     -> ${await text(page, '#hood')} | ${await text(page, '#where')} | ${(await text(page, '#note')) || ''} | outline: ${await boundaryName(page)}`);
+      await shot(page, `phone-${name}`);
+    });
+  }
 
   await scenario('LIVE: Texas panhandle (phone)', { ...devices['iPhone 13'] }, async (page) => {
     await page.goto(`${BASE}#35.40000,-102.30000`);
